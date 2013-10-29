@@ -1,0 +1,20 @@
+'{$STAMP BS2px}
+'{$PBASIC 2.5}
+
+  TestPin VAR Byte
+  TestVal VAR Bit
+
+  I_O_DIR  CON %1111111101111111   'I/O pin directions
+  I_O_INIT CON %0000000100000000   'Initial output settings
+
+  DIRS = I_O_DIR
+  OUTS = I_O_INIT
+
+Main:
+  DEBUG CLS,"Which Pin? "
+  DEBUGIN DEC TestPin
+  DEBUG CR,"0 or 1?"
+  DEBUGIN BIN1 TestVal
+  OUTS.LOWBIT(TestPin) = TestVal
+  GOTO Main
+  STOP

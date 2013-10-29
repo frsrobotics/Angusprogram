@@ -1,0 +1,160 @@
+'{$STAMP BS2px}
+'{$PBASIC 2.5}
+
+  I_O_DIR  CON %1000000100000000   'I/O pin directions
+  I_O_PULL CON %0110011000000000   'Pullup (PU) resistor configurations
+  I_O_INIT CON %0000000100000000   'Initial output settings
+
+  'Communication string variables
+  Cmmd VAR Byte    'Holds command code to motor controller
+  Addr VAR Byte    'Holds register address in motor controller
+  Leng VAR Byte    'Holds the length of the data to be transmitted
+  Cksum VAR Byte   'Holds the checksum for the communication string to the motor controller
+  Data1 VAR Byte   'Holds the data input from the motor controller
+  Reg VAR Byte
+
+  MOTOR_ADJUST CON 15
+  FORWARD_LEFT_FAST CON 1023
+  FORWARD_RIGHT_FAST CON -1023-MOTOR_ADJUST
+  BACKWARD_LEFT_FAST CON -1023
+  BACKWARD_RIGHT_FAST CON 1023
+
+  'Motor speed
+  LeftSpeed VAR Word  'Speed of left motor
+  RightSpeed VAR Word 'Speed of right motor
+
+  'Follow wall constants
+  FW_SCALE CON 20
+
+  'Motor controller constants
+  BAUD CON 86    'Serial transmission speed to motor controller
+  TM CON 7       'Pin number of receiving data from motor controller
+  FM CON 8       'Pin number for transmitting data to the motor controller
+  I VAR Word
+  Dist VAR Word
+  Dist2 VAR Word
+  Diff VAR Word
+  RfDist VAR Dist2
+  RbDist VAR Dist
+  Sonar VAR Byte
+  Trigger     CON     13
+  Scale       CON     $0CD                    ' raw x 0.80 = uS
+  'RawToIn         CON     889                     ' 1 / 73.746 (with **)
+  RawToIn         CON     8890                     ' 1 / 73.746 (with **) * 10
+
+  Odometer VAR Word
+  OdometerTick VAR Bit
+
+  SDA     CON 0           ' SDA on pin13, SCL on pin14
+
+  DIRS = I_O_DIR
+  OUTS = I_O_INIT
+  CONFIGPIN PULLUP,I_O_PULL
+  'DEBUG "Setting Ramp",CR
+  PAUSE 500
+  GOSUB SetMotorRamp
+
+Main:
+ ' DO WHILE IN13 = 1
+ ' LOOP
+  'DEBUG "Starting",CR
+ ' PAUSE 1500
+  'Odometer = 48 * 4
+  'OdometerTick = IN10
+  LeftSpeed = FORWARD_LEFT_FAST
+  RightSpeed = FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+  'DO WHILE Odometer > 0
+  DO WHILE 1
+    'GOSUB CheckOdometry
+    Sonar = 2
+    GOSUB GetSonar
+    'GOSUB CheckOdometry
+    Dist2 = Dist + 6
+    Sonar = 3
+    GOSUB GetSonar
+    'GOSUB CheckOdometry
+    GOSUB FollowWall
+    'GOSUB CheckOdometry
+    GOSUB SetMotorSpeed
+  LOOP
+  LeftSpeed = 0
+  RightSpeed = 0
+  GOSUB SetMotorSpeed
+  GOTO Main
+  STOP
+
+GetSonar:
+  LOW Sonar                                  ' make trigger 0-1-0
+  PULSOUT Sonar, Trigger                         ' activate sensor
+  PULSIN  Sonar, 1, Dist                  ' measure echo pulse
+  Dist = Dist */ Scale                    ' convert to uS
+  Dist = Dist / 2                         ' remove return trip
+  Dist = Dist ** RawToIn
+  RETURN
+
+
+SetMotorSpeed:
+  DEBUG "SetMotorSpeed",CR
+  CMMD =$D0
+  ADDR =$01
+  LENG =$04
+  CKSUM =CMMD+ADDR+LENG+LeftSpeed.HIGHBYTE+LeftSpeed.LOWBYTE+RightSpeed.HIGHBYTE+RightSpeed.LOWBYTE
+  SEROUT FM,BAUD,[CMMD,ADDR,LENG,LeftSpeed.HIGHBYTE,LeftSpeed.LOWBYTE,Rightspeed.HIGHBYTE,RightSpeed.LOWBYTE,CKSUM]
+  'SERIN TM,BAUD,150,NA_SDC1,[DATA1]
+  RETURN
+  IF DATA1<>$6 THEN NA_SDC1
+  RETURN
+NA_SDC1:
+  'DEBUG "SETDCERROR",CR
+  RETURN
+
+SetMotorRamp:
+  'DEBUG "Setting ramp",CR
+  CMMD =$D2
+  ADDR =$01
+  LENG =$02
+  REG = 9
+  Data1 = 3
+  CKSUM =CMMD+ADDR+LENG+Reg+Data1
+  SEROUT FM,BAUD,[CMMD,ADDR,LENG,Reg,Data1,CKSUM]
+  SERIN TM,BAUD,150,NA_SDC1,[DATA1]
+  'DEBUG "Just set ramp",CR
+  IF DATA1<>$6 THEN NA_SDC2
+  RETURN
+NA_SDC2:
+  'DEBUG "Setting error",CR
+  'DEBUG "SETDCERROR2 ",BIN8 Data1, CR
+  RETURN
+
+CheckOdometry:
+  IF OdometerTick = IN10 THEN RETURN
+  OdometerTick = IN10
+  IF Odometer = 0 THEN RETURN
+  Odometer = Odometer - 1
+  RETURN
+
+FollowWall:
+  ' Front pointing away from wall
+  IF RfDist > RbDist  THEN
+    Diff = RfDist - RbDist
+    LeftSpeed = FORWARD_LEFT_FAST
+    'RightSpeed = -(9*(-FORWARD_RIGHT_FAST)/10)
+    'RightSpeed = FORWARD_RIGHT_FAST + 30
+    RightSpeed = FORWARD_RIGHT_FAST + (Diff*FW_SCALE)
+    DEBUG CLS, "  RIGHT  ",SDEC5 LeftSpeed,"  ",SDEC5 RightSpeed,"  ",DEC3 RfDist,"  ",DEC3 RbDist, "  ", DEC Diff
+  ' Front point towards wall
+  ELSEIF RfDist < RbDist THEN
+    Diff = RbDist - RfDist
+    'LeftSpeed = (9*FORWARD_LEFT_FAST)/10
+    'LeftSpeed = FORWARD_LEFT_FAST - 30
+    LeftSpeed = FORWARD_LEFT_FAST - (Diff*FW_SCALE)
+    RightSpeed = FORWARD_RIGHT_FAST
+    DEBUG CLS, "   LEFT  ",SDEC5 LeftSpeed,"  ",SDEC5 RightSpeed,"  ",DEC3 RfDist,"  ",DEC3 RbDist, "  ", DEC Diff
+  ELSE
+    LeftSpeed = FORWARD_LEFT_FAST
+    RightSpeed = FORWARD_RIGHT_FAST
+    DEBUG CLS, "STRAIGHT  ",SDEC5 LeftSpeed,"  ",SDEC5 RightSpeed,"  ",DEC3 RfDist,"  ",DEC3 RbDist, "  ", DEC Diff
+  ENDIF
+  GOSUB SetMotorSpeed
+  RETURN

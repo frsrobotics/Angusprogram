@@ -1,0 +1,270 @@
+' {$STAMP BS2px}
+' {$PBASIC 2.5}
+'This is a skeletal program for driving PING, the Frontier fire-fighting robot.
+
+'--------------------------------------------------------------------------
+'Variable declarations
+'
+'The BS2px has only 26 byte variables available, so we need to keep track
+'of how many we have used.  It might be necessary to use one variable for
+'several purposes.  When we do this, we can alias the variable, using
+'different meaningful names for it depending on how we are using it.
+'(This is really for our benefit, since the computer does not care what
+'we call a variable.)  When we alias a variable, however, we need to
+'make sure that we are not using the the same variable in two different
+'ways in same section of code.
+
+  'Communication string variables
+  Cmmd VAR Byte    'Holds command code to motor controller
+  Addr VAR Byte    'Holds register address in motor controller
+  Leng VAR Byte    'Holds the length of the data to be transmitted
+  Cksum VAR Byte   'Holds the checksum for the communication string to the motor controller
+  Data1 VAR Byte   'Holds the data input from the motor controller
+
+  'Motor speed
+  LeftSpeed VAR Word  'Speed of left motor
+  RightSpeed VAR Word 'Speed of right motor
+
+  'Sensor variables
+  Bumper VAR Byte          'Bumper switches
+  WhiteLine VAR Byte       'White line sensor
+  Distance VAR Word        'Distance from infrared sensor
+  DistanceSensor VAR Byte   'Selects infrared distance sensor to be read
+  Difference VAR Word
+  Done VAR Byte
+  TurnTime VAR Word
+  Angle VAR Word            'angle offset for wall following
+  Uv VAR Distance 'Word 'alias to either UV and DISTANCE
+  I VAR Word
+
+  I_O_DIR  CON %1001000100000001   'I/O pin directions
+  I_O_PULL CON %0000111001000000   'Pullup (PU) resistor configurations
+  I_O_INIT CON %0000000100000001   'Initial output settings
+  BUMPER_MASK CON %00001110  'Mask to extract bumper switch inputs
+  HIT_FRONT CON %00000110        'Bumper switch value for a front hit
+  HIT_FRONT_LEFT CON %00000010   'Bumper switch value for a front left hit
+  HIT_FRONT_RIGHT CON %00000100  'Bumper switch value for a front right hit
+  HIT_LEFT CON %00001010         'Bumper switch value for a left hit
+  HIT_RIGHT CON %00001100        'Bumper switch value for a right hit
+  HIT_BACK CON %00001000         'Bumper switch value for a back hit
+  UV_MASK CON %01000000          'Mask to extract UV
+
+  WHITE_LINE_MASK CON %01000000  'Mask to extract white line input
+
+  DISTANCE_SENSOR_TRIGGER CON 13     'Distance sensor trigger pin
+  DISTANCE_SENSOR_FRONT CON 3       'Front distance sensor input pin
+  DISTANCE_SENSOR_FRONT_LEFT CON 4  'Front distance sensor input pin
+  DISTANCE_SENSOR_FRONT_RIGHT CON 2 'Front distance sensor input pin
+  DISTANCE_SENSOR_BACK_LEFT CON 5   'Front distance sensor input pin
+  DISTANCE_SENSOR_BACK_RIGHT CON 3  'Front distance sensor input pin
+  DISTANCE_TOO_FAR CON 80 'was 100  'Max distance from wall
+  DISTANCE_TOO_NEAR CON 40 'was 60  'Min distance from wall
+
+  FAN CON 15  'Fan control pin
+
+  'Constants for sonar
+  Trigger CON 13
+  Scale CON $0cd
+  Rawtoin CON 8890
+  IsHigh  CON 1
+  IsLow CON 0
+
+  'Motor controller constants
+  BAUD CON 86    'Serial transmission speed to motor controller
+  TM CON 7       'Pin number of receiving data from motor controller
+  FM CON 8       'Pin number for transmitting data to the motor controller
+
+  'Speed control constants
+  FORWARD_LEFT_FAST CON 1024   'was 400
+  FORWARD_RIGHT_FAST CON -1024 'was 400
+  BACKWARD_LEFT_FAST CON -1024 'was 400
+  BACKWARD_RIGHT_FAST CON 1024 'was 400
+  'MOTOR_ADJUST CON 0 'was 57 originally
+  'FORWARD_LEFT_FAST CON 500
+  'FORWARD_RIGHT_FAST CON -500-MOTOR_ADJUST
+  'BACKWARD_LEFT_FAST CON -500
+  'BACKWARD_RIGHT_FAST CON 500
+
+  FORWARD_LEFT_TURN CON 50
+  FORWARD_RIGHT_TURN CON -50
+  BACKWARD_LEFT_TURN CON -50
+  BACKWARD_RIGHT_TURN CON 50
+
+  FORWARD_LEFT_SLOW CON 300
+  FORWARD_RIGHT_SLOW CON -300
+  BACKWARD_LEFT_SLOW CON -300
+  BACKWARD_RIGHT_SLOW CON 300
+
+  FORWARD_LEFT_WALL CON 800
+  FORWARD_RIGHT_WALL CON -800
+  BACKWARD_LEFT_WALL CON -800
+  BACKWARD_RIGHT_WALL CON 800
+
+  RIGHT_GAIN CON 10
+  RIGHT_ADJUST CON -40
+  RIGHT_BACK_DISTANCE_THRESHOLD CON 14
+  RIGHT_FRONT_DISTANCE_THRESHOLD CON 8
+  INTERSECTION_DISTANCE_THRESHOLD CON 240
+  RIGHT_FRONT_DISTANCE_TOO_CLOSE CON 95
+  RIGHT_FRONT_DISTANCE_TOO_FAR CON 45
+  FRONT_LEFT_FIX CON 0
+  BACK_RIGHT_FIX CON 18
+  FRONT_RIGHT_FIX CON 0
+  BACK_LEFT_FIX CON 0
+  DISTANCE_M CON -8 'SLOPE TIMES 100
+  DISTANCE_B CON 2138 'INTERCEPTTIMES 100
+
+  'Timing constants
+  STOP_TIME CON 50 'Time it takes to stop the robot. NOTE: Might need to tweak this
+  TURN90_TIME CON 340 'Time it takes to turn the robot 90 degrees.  NOTE: will need to tweak this
+  BACKUP_TIME CON 300 'Time it take to back a robot up enough to deactivate bumpers.  NOTE: Will need to be tweaked
+  BUMPER_DEBOUNCE_TIME CON 10 'Time it takes a bumper switch to stop bounding
+  TURN70_TIME CON 241 'Time it takes to turn 70 degrees
+  TURN30_TIME CON 100 'Time it takes to to turn 30 degrees
+  TURN9_TIME CON 30 'Time it takes to turn 9 degrees
+  SCOOT_TIME CON 208
+  TURN_WALL_TIME CON 60
+  CORRECTION_ANGLE CON 15
+  ANGLE_TOO_BIG CON 600
+  UV_TIME CON 6000
+
+  'Set up the I/O lines
+  DIRS = I_O_DIR
+  OUTS = I_O_INIT
+  CONFIGPIN PULLUP,I_O_PULL
+
+  PAUSE 5000
+
+'--------------------------------------------------------------------------
+'Program main loop. Done repeatedly.
+
+MainLoop:
+    LeftSpeed =  FORWARD_LEFT_FAST
+    RightSpeed =  FORWARD_RIGHT_FAST
+    GOSUB SetMotorSpeed
+    GOSUB FollowRightWall
+    'GOSUB FollowLeftWall
+    PAUSE 25
+    'PAUSE 500
+    GOTO MainLoop
+
+FollowRightWall:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  GOSUB ReadDistanceSensors
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
+    Done = 1
+    RETURN
+  ELSE
+    Done = 0
+  ENDIF
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  GOSUB ReadDistanceSensors
+  'DEBUG DEC Difference, " ",DEC Distance,CR
+  IF ((Difference+Distance)/2)>DISTANCE_TOO_FAR THEN
+    Angle = -CORRECTION_ANGLE
+  ELSEIF ((Difference+Distance)/2)<DISTANCE_TOO_NEAR THEN
+    Angle = CORRECTION_ANGLE
+  ELSE
+    Angle = 0
+  ENDIF
+  IF Difference = (Distance+Angle) THEN
+    LeftSpeed =  FORWARD_LEFT_FAST
+    RightSpeed =  FORWARD_RIGHT_FAST
+    GOSUB SetMotorSpeed
+  ELSEIF Difference < (Distance+Angle) THEN
+  'DEBUG "less than zero"
+    LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+    GOSUB SetMotorSpeed
+  ELSE
+  'DEBUG "greater than zero"
+    LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+    GOSUB SetMotorSpeed
+  ENDIF
+  RETURN
+'-------------------------------------------------------------------------------------
+ FollowLeftWall:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
+    Done = 1
+    RETURN
+  ELSE
+    Done = 0
+  ENDIF
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  IF ((Difference+Distance)/2)>DISTANCE_TOO_FAR THEN
+    Angle = -CORRECTION_ANGLE
+  ELSEIF ((Difference+Distance)/2)<DISTANCE_TOO_NEAR THEN
+    Angle = CORRECTION_ANGLE
+  ELSE
+    Angle = 0
+  ENDIF
+  IF Difference = (Distance+Angle) THEN
+    LeftSpeed =  FORWARD_LEFT_FAST
+    RightSpeed =  FORWARD_RIGHT_FAST
+    GOSUB SetMotorSpeed
+  ELSEIF Difference < (Distance+Angle) THEN
+  'DEBUG "less than zero"
+    'LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    'LeftSpeed = FORWARD_LEFT_FAST
+    'RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+
+    LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+
+    'LeftSpeed = FORWARD_LEFT_FAST
+    'RightSpeed = BACKWARD_RIGHT_FAST
+
+    GOSUB SetMotorSpeed
+  ELSE
+  'DEBUG "greater than zero"
+    'LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    'RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+    'RightSpeed = FORWARD_RIGHT_FAST
+
+    LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+
+    'LeftSpeed = BACKWARD_LEFT_FAST
+    'RightSpeed = FORWARD_RIGHT_FAST
+
+    GOSUB SetMotorSpeed
+  ENDIF
+  RETURN
+'--------------------------------------------------------------------------
+  ReadDistanceSensors:
+  LOW DistanceSensor
+  PULSOUT DistanceSensor, Trigger
+  PULSIN DistanceSensor, ishigh, Distance
+  Distance = Distance */ scale
+  Distance = Distance / 2
+  Distance = Distance ** rawtoin
+  RETURN
+
+'--------------------------------------------------------------------------
+
+SetMotorSpeed:
+CMMD =$D0
+ADDR =$01
+LENG =$04
+CKSUM =CMMD+ADDR+LENG+LeftSpeed.HIGHBYTE+LeftSpeed.LOWBYTE+RightSpeed.HIGHBYTE+RightSpeed.LOWBYTE
+SEROUT FM,BAUD,[CMMD,ADDR,LENG,LeftSpeed.HIGHBYTE,LeftSpeed.LOWBYTE,Rightspeed.HIGHBYTE,RightSpeed.LOWBYTE,CKSUM]
+SERIN TM,BAUD,150,NA_SDC1,[DATA1]
+
+IF DATA1<>$6 THEN NA_SDC1
+RETURN
+NA_SDC1:
+DEBUG "SETDCERROR",CR
+RETURN
+
+'BACKWARDS:
+'LeftSpeed =-1023
+'RightSpeed =1023
+'GOSUB SetMotorSpeed
+'PAUSE 500
+'RETURN

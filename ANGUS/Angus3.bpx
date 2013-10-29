@@ -1,0 +1,923 @@
+'{$STAMP BS2PX}
+' {$PBASIC 2.5}
+'==========================================================================
+' BEGINNING OF CODE HEADER
+' Make sure that everything between the beginning and end of code header
+' markings appear at the beginning of the file for each code page, just
+' after the $STAMP and $PBASIC directives
+'==========================================================================
+
+'This is a program for driving Angus, the Frontier fire-fighting robot.
+
+'--------------------------------------------------------------------------
+'Variable declarations
+'
+'The BS2px has only 26 byte variables available, so we need to keep track
+'of how many we have used.  It might be necessary to use one variable for
+'several purposes.  When we do this, we can alias the variable, using
+'different meaningful names for it depending on how we are using it.
+'(This is really for our benefit, since the computer does not care what
+'we call a variable.)  When we alias a variable, however, we need to
+'make sure that we are not using the the same variable in two different
+'ways in same section of code.
+
+  'Communication string variables
+  Cmmd VAR Byte    'Holds command code to motor controller
+  Addr VAR Byte    'Holds register address in motor controller
+  Leng VAR Byte    'Holds the length of the data to be transmitted
+  Cksum VAR Byte   'Holds the checksum for the communication string to the motor controller
+  Data1 VAR Byte   'Holds the data input from the motor controller
+
+  'Motor speed
+  LeftSpeed VAR Word  'Speed of left motor
+  RightSpeed VAR Word 'Speed of right motor
+
+  'Sensor variables
+  WhiteLine VAR Byte       'White line sensor
+  Distance VAR Word        'Distance from infrared sensor
+  Distance2 VAR Word
+  DistanceSensor VAR Byte   'Selects infrared distance sensor to be read
+  Difference VAR Word
+  Done VAR Byte
+  TurnTime VAR Word
+  Angle VAR Word            'angle offset for wall following
+  Uv VAR Distance           'Word 'alias to either UV and DISTANCE
+  Pyro VAR Done
+  PyroReading VAR WhiteLine
+  I VAR Word
+  Temp VAR I
+  Room VAR WhiteLine
+  Corner VAR Done
+
+  I_O_DIR  CON %1100000100000001   'I/O pin directions
+  I_O_PULL CON %0001011000000000   'Pullup (PU) resistor configurations
+  I_O_INIT CON %0000000100000001   'Initial output settings
+  UV_MASK CON %00001000          'Mask to extract UV
+  WHITE_LINE_MASK CON %00000010  'Mask to extract white line input
+  ODOMETRY_MASK CON %00000100    'Mask to extract odometry input
+
+  DISTANCE_SENSOR_TRIGGER CON 13     'Distance sensor trigger pin
+  'DISTANCE_SENSOR_FRONT CON 1       'Front distance sensor input pin
+  DISTANCE_SENSOR_FRONT_LEFT CON 4  'Front distance sensor input pin
+  DISTANCE_SENSOR_FRONT_RIGHT CON 2 'Front distance sensor input pin
+  DISTANCE_SENSOR_BACK_LEFT CON 5   'Front distance sensor input pin
+  DISTANCE_SENSOR_BACK_RIGHT CON 3  'Front distance sensor input pin
+  DISTANCE_TOO_FAR CON 70 'was 100 6/18/12 'Max distance from wall
+  DISTANCE_TOO_NEAR CON 30 'was 60  'Min distance from wall
+
+  PANHEAD CON 6 'was 14             'Pan head servo pin
+  PAN_LEFT CON 800 'was 2900        'Pulse width to pan full left
+  PAN_RIGHT CON 2900 'was 800       'Pulse width to pan full right
+  PAN_FRONT CON 1800 'was 1760      'Pulse width to pan straight ahead
+  PAN_LEFT_45 CON 1275 'was 2345    'Pulse width to pan 45 degrees left
+  PAN_RIGHT_45 CON 2345 'was 1275   'Pulse width to pan 45 degrees right
+
+  PUMP CON 15  'Pump control pin
+
+  'Constants for sonar
+  'Pingfl  PIN 4
+  'pingfr  PIN 2
+  'pingbl  PIN 5
+  'pingbr  PIN 3
+  Trigger CON 13
+  Scale CON $0cd
+  Rawtoin CON 8890
+  IsHigh  CON 1
+  IsLow CON 0
+
+  'Motor controller constants
+  BAUD CON 86    'Serial transmission speed to motor controller
+  TM CON 7       'Pin number of receiving data from motor controller
+  FM CON 8       'Pin number for transmitting data to the motor controller
+
+  'Speed control constants
+  FORWARD_LEFT_FAST CON 800
+  FORWARD_RIGHT_FAST CON -800-32
+  BACKWARD_LEFT_FAST CON -800
+  BACKWARD_RIGHT_FAST CON 800
+  'MOTOR_ADJUST CON 0 'was 57 originally
+  'FORWARD_LEFT_FAST CON 500
+  'FORWARD_RIGHT_FAST CON -500-MOTOR_ADJUST
+  'BACKWARD_LEFT_FAST CON -500
+  'BACKWARD_RIGHT_FAST CON 500
+
+  'FORWARD_LEFT_FAST CON 500
+  'FORWARD_RIGHT_FAST CON -500
+  'BACKWARD_LEFT_FAST CON -500
+  'BACKWARD_RIGHT_FAST CON 500
+
+  FORWARD_LEFT_TURN CON 50
+  FORWARD_RIGHT_TURN CON -50
+  BACKWARD_LEFT_TURN CON -50
+  BACKWARD_RIGHT_TURN CON 50
+
+ FORWARD_LEFT_NITRO CON 1000
+  FORWARD_RIGHT_NITRO CON -1000-30
+  BACKWARD_LEFT_NITRO CON -1000
+  BACKWARD_RIGHT_NITRO CON 1000
+
+  'FORWARD_LEFT_SLOW CON 300
+  'FORWARD_RIGHT_SLOW CON -300
+  'BACKWARD_LEFT_SLOW CON -300
+  'BACKWARD_RIGHT_SLOW CON 300
+
+  FORWARD_LEFT_SLOW CON 350
+  FORWARD_RIGHT_SLOW CON -350
+  BACKWARD_LEFT_SLOW CON -350
+  BACKWARD_RIGHT_SLOW CON 350
+
+  FORWARD_LEFT_WALL CON 800
+  FORWARD_RIGHT_WALL CON -800
+  BACKWARD_LEFT_WALL CON -800
+  BACKWARD_RIGHT_WALL CON 800
+
+  RIGHT_GAIN CON 10
+  RIGHT_ADJUST CON -40
+  RIGHT_BACK_DISTANCE_THRESHOLD CON 14
+  RIGHT_FRONT_DISTANCE_THRESHOLD CON 8
+  INTERSECTION_DISTANCE_THRESHOLD CON 240
+  INTERSECTION_DISTANCE_THRESHOLD2 CON 80
+  INTERSECTION_DISTANCE_THRESHOLD3 CON 110 'was 120 3/5/13 then 130
+  RIGHT_FRONT_DISTANCE_TOO_CLOSE CON 95
+  RIGHT_FRONT_DISTANCE_TOO_FAR CON 45
+  FRONT_LEFT_FIX CON 0
+  BACK_RIGHT_FIX CON 18
+  FRONT_RIGHT_FIX CON 0
+  BACK_LEFT_FIX CON 0
+  LEFT CON 2
+  RIGHT CON 1
+  STRAIGHT CON 0
+
+  'Timing constants
+  STOP_TIME CON 50 'Time it takes to stop the robot. NOTE: Might need to tweak this
+  TURN90_TIME CON 325 'Time it takes to turn the robot 90 degrees.  NOTE: will need to tweak this
+  CORRECTION_ANGLE CON 20 'was 300 6/18/12
+  ANGLE_TOO_BIG CON 600
+  UV_TIME CON 3000
+  PYRO_THRESHOLD CON 100
+  PanAngle VAR Word
+  ScootDistance VAR PanAngle
+
+'--------------------------------------------------------------------------
+' Common subroutines used on each code page
+  GOTO EndOFCommonCode
+
+'--------------------------------------------------------------------------
+' Follows right wall until front sensor clears the wall. Returns done = 1
+' when this happens, 0 otherwise
+
+FollowRightWall:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  GOSUB ReadDistanceSensors
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
+    Done = 1
+    RETURN
+  ELSE
+    Done = 0
+  ENDIF
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  GOSUB ReadDistanceSensors
+  'DEBUG DEC Difference, " ",DEC Distance,CR
+  IF ((Difference+Distance)/2)>DISTANCE_TOO_FAR THEN
+    Angle = -CORRECTION_ANGLE
+  ELSEIF ((Difference+Distance)/2)<DISTANCE_TOO_NEAR THEN
+    Angle = CORRECTION_ANGLE
+  ELSE
+    Angle = 0
+  ENDIF
+  IF Difference = (Distance+Angle) THEN
+    LeftSpeed =  FORWARD_LEFT_FAST
+    RightSpeed =  FORWARD_RIGHT_FAST
+    GOSUB SetMotorSpeed
+  ELSEIF Difference < (Distance+Angle) THEN
+  'DEBUG "less than zero"
+    LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+    GOSUB SetMotorSpeed
+  ELSE
+  'DEBUG "greater than zero"
+    LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+    GOSUB SetMotorSpeed
+  ENDIF
+  RETURN
+
+
+  '--------------------------------------------------------------------------
+
+AlignRightWall:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  GOSUB ReadDistanceSensors
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  GOSUB ReadDistanceSensors
+  'DEBUG "front ",DEC difference," back ",DEC distance,CR
+  IF (Difference + 0) < Distance THEN
+    LeftSpeed = BACKWARD_LEFT_SLOW
+    RightSpeed = FORWARD_RIGHT_SLOW
+    'DEBUG "left ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+    GOSUB SetMotorSpeed
+    GOTO AlignRightWall2
+   ELSEIF (Distance + 0) < Difference THEN
+    LeftSpeed = FORWARD_LEFT_SLOW
+    RightSpeed = BACKWARD_RIGHT_SLOW
+    'DEBUG "right ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+    GOSUB SetMotorSpeed
+    GOTO AlignRightWall3
+  ELSE
+    GOTO AlignRightWall4
+  ENDIF
+AlignRightWall2:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  GOSUB ReadDistanceSensors
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  GOSUB ReadDistanceSensors
+  'DEBUG "left ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+  IF (Difference + 0) < Distance THEN GOTO AlignRightWall2
+  GOTO AlignRightWall4
+AlignRightWall3:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  GOSUB ReadDistanceSensors
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  GOSUB ReadDistanceSensors
+  'DEBUG "right ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+  IF (Distance + 0) < Difference THEN GOTO AlignRightWall3
+  GOTO AlignRightWall4
+AlignRightWall4:
+  LeftSpeed = 0
+  RightSpeed = 0
+  GOSUB SetMotorSpeed
+  'DEBUG "right ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+  RETURN
+
+
+  '--------------------------------------------------------------------------
+' Follows right wall until front sensor clears the wall. Returns done = 1
+' when this happens, 0 otherwise
+
+FollowLeftWall:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
+    Done = 1
+    RETURN
+  ELSE
+    Done = 0
+  ENDIF
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  IF ((Difference+Distance)/2)>DISTANCE_TOO_FAR THEN
+    Angle = -CORRECTION_ANGLE
+  ELSEIF ((Difference+Distance)/2)<DISTANCE_TOO_NEAR THEN
+    Angle = CORRECTION_ANGLE
+  ELSE
+    Angle = 0
+  ENDIF
+  IF Difference = (Distance+Angle) THEN
+    LeftSpeed =  FORWARD_LEFT_FAST
+    RightSpeed =  FORWARD_RIGHT_FAST
+    GOSUB SetMotorSpeed
+  ELSEIF Difference < (Distance+Angle) THEN
+  'DEBUG "less than zero"
+    'LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    'LeftSpeed = FORWARD_LEFT_FAST
+    'RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+
+    LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+
+    'LeftSpeed = FORWARD_LEFT_FAST
+    'RightSpeed = BACKWARD_RIGHT_FAST
+
+    GOSUB SetMotorSpeed
+  ELSE
+  'DEBUG "greater than zero"
+    'LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    'RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+    'RightSpeed = FORWARD_RIGHT_FAST
+
+    LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+
+    'LeftSpeed = BACKWARD_LEFT_FAST
+    'RightSpeed = FORWARD_RIGHT_FAST
+
+    GOSUB SetMotorSpeed
+  ENDIF
+  RETURN
+
+
+'--------------------------------------------------------------------------
+
+AlignLeftWall:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'DEBUG "front ",DEC difference," back ",DEC distance,CR
+  IF (Difference+0) < Distance THEN
+    LeftSpeed = FORWARD_LEFT_SLOW
+    RightSpeed = BACKWARD_RIGHT_SLOW
+    'DEBUG "RIGHT ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+    GOSUB SetMotorSpeed
+    GOTO AlignLeftWall2
+  ELSEIF (Distance+0) < Difference THEN
+    LeftSpeed = BACKWARD_LEFT_SLOW
+    RightSpeed = FORWARD_RIGHT_SLOW
+    'DEBUG "left ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+    GOSUB SetMotorSpeed
+    GOTO AlignLeftWall3
+  ELSE
+    GOTO AlignLeftWall4
+  ENDIF
+AlignLeftWall2:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'DEBUG "right ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+  IF (Difference + 0) < Distance THEN GOTO AlignLeftWall2
+  GOTO AlignLeftWall4
+AlignLeftWall3:
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  Difference = Distance
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'DEBUG "left ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+  IF (Distance + 0) < Difference THEN GOTO AlignLeftWall3
+  GOTO AlignLeftWall4
+AlignLeftWall4:
+  LeftSpeed = 0
+  RightSpeed = 0
+  GOSUB SetMotorSpeed
+  'DEBUG "right ",DEC leftspeed," ",DEC rightspeed," ",DEC difference," ",DEC distance,CR
+  RETURN
+
+'--------------------------------------------------------------------------
+'Reads an infrared distance sensor, returning the sensor reading in the
+'variable "Distance."  This subroutine should be called with the pin number
+'of the sensor to be read in the variable "DistanceSensor."
+
+ReadDistanceSensors:
+  LOW DistanceSensor
+  PULSOUT DistanceSensor, Trigger
+  PULSIN DistanceSensor, ishigh, Distance
+  Distance = Distance */ scale
+  Distance = Distance / 2
+  Distance = Distance ** rawtoin
+  RETURN
+
+'---------------------------------------------------------------
+' Sets the motor speed for both wheels
+SetMotorSpeed:
+  CMMD =$D0
+  ADDR =$01
+  LENG =$04
+  CKSUM =CMMD+ADDR+LENG+LeftSpeed.HIGHBYTE+LeftSpeed.LOWBYTE+RightSpeed.HIGHBYTE+RightSpeed.LOWBYTE
+  SEROUT FM,BAUD,[CMMD,ADDR,LENG,LeftSpeed.HIGHBYTE,LeftSpeed.LOWBYTE,Rightspeed.HIGHBYTE,RightSpeed.LOWBYTE,CKSUM]
+  SERIN TM,BAUD,150,NA_SDC1,[DATA1]
+
+  IF DATA1<>$6 THEN NA_SDC1
+  RETURN
+  NA_SDC1:
+  DEBUG "SETDCERROR",CR
+  RETURN
+
+'--------------------------------------------------------------------------
+'Brings the robot to a stop
+
+FullStop:
+  LeftSpeed = 0
+  RightSpeed = 0
+  GOSUB SetMotorSpeed
+  PAUSE STOP_TIME
+  RETURN
+
+'--------------------------------------------------------------------------
+'Checks whether front of robot is over white line.  Returns value in
+'variable "WhiteLine."  If'"WhiteLine" is non-zero, robot is over line.
+
+CheckWhiteLine:
+  '(INH & WHITE_LINE_MASK) extracts the output of the white line detector,
+  ' which is active low. However, it is easer to work with bits that
+  'are active high, so the "... ^ WHITE_LINE_MASK" will flip the white line bit,
+  'taking 0 to 1 and 1 to 0.  So, if any of the bumpers are 1, then WhiteLine
+  'will be non-zero and we have a hit.
+  WhiteLine = (INH & WHITE_LINE_MASK) ^ WHITE_LINE_MASK
+  RETURN
+
+'--------------------------------------------------------------------------
+'Turns the pump on
+
+TurnOnPump:
+  HIGH PUMP
+  RETURN
+
+'--------------------------------------------------------------------------
+'Turns the pump off
+
+TurnOffPump:
+  LOW PUMP
+  RETURN
+
+'--------------------------------------------------------------------------
+'Read the UV sensor
+
+ReadUv:
+  Uv = 0
+  FOR i = 0 TO UV_TIME
+    IF (INH & UV_MASK)<> 0 THEN Uv = Uv + 1
+  NEXT
+  RETURN
+
+'--------------------------------------------------------------------------
+'Read the Pyro sensor
+
+'ReadPyro:
+ ' Pyro = 1
+  'FOR I = 2 TO 9
+   ' I2CIN 0, $D0, I, [PyroReading]
+    'IF PyroReading > PYRO_THRESHOLD THEN RETURN
+  'NEXT
+  'Pyro = 0
+  'RETURN
+
+'--------------------------------------------------------------------------
+'Turn the pan head
+
+Pan:
+  LOW PANHEAD
+  PULSOUT PANHEAD,PanAngle
+  FOR I = 1 TO 35
+    PAUSE 10
+    PULSOUT PANHEAD,PanAngle
+  NEXT
+  RETURN
+
+PanLeft:
+   PanAngle = PAN_LEFT
+   GOSUB Pan
+   RETURN
+
+PanRight:
+   PanAngle = PAN_RIGHT
+   GOSUB Pan
+   RETURN
+
+PanFront:
+   PanAngle = PAN_FRONT
+   GOSUB Pan
+   RETURN
+
+PanLeft45:
+   PanAngle = PAN_LEFT_45
+   GOSUB Pan
+   RETURN
+
+PanRight45:
+   PanAngle = PAN_RIGHT_45
+   GOSUB Pan
+   RETURN
+
+'--------------------------------------------------------------------------
+'Checks whether the odometry sensor is seeing a black or white line.
+' Returns value in variable "WhiteLine."  If'"WhiteLine" is non-zero,
+' robot is seeing white line.
+
+CheckOdometry:
+  '(INH & ODOMETRY_MASK) extracts the output of the odometry detector,
+  ' which is active low. However, it is easer to work with bits that
+  'are active high, so the "... ^ ODOMETRY_MASK" will flip the white line bit,
+  'taking 0 to 1 and 1 to 0.  So, if any of the bumpers are 1, then WhiteLine
+  'will be non-zero and we have a hit.
+  WhiteLine = (INH & ODOMETRY_MASK) ^ ODOMETRY_MASK
+  RETURN
+
+'--------------------------------------------------------------------------
+GoForward:
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+  RETURN
+
+'--------------------------------------------------------------------------
+StepBack:
+  ScootDistance = 5
+  LeftSpeed =  BACKWARD_LEFT_FAST
+  RightSpeed =  BACKWARD_RIGHT_FAST
+  GOTO Scoot1
+
+'--------------------------------------------------------------------------
+NitrousEngage:
+  LeftSpeed = FORWARD_LEFT_NITRO
+  RightSpeed = FORWARD_RIGHT_NITRO
+  GOSUB SetMotorSpeed
+  RETURN
+'-------------------------------------------------------------------------
+ScootBackwards:
+  LeftSpeed =  BACKWARD_LEFT_FAST
+  RightSpeed =  BACKWARD_RIGHT_FAST
+  GOTO Scoot1
+
+Scoot:
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+Scoot1:
+  GOSUB SetMotorSpeed
+Scoot2:
+  GOSUB CheckOdometry
+  DO UNTIL ScootDistance = 0
+    Temp = WhiteLine
+    GOSUB CheckOdometry
+    'DEBUG DEC WhiteLine, DEC Temp,CR
+    IF Temp <> WhiteLine THEN ScootDistance = ScootDistance -1
+  LOOP
+  GOSUB FullStop
+  RETURN
+
+'--------------------------------------------------------------------------
+TurnLeft90:
+  LeftSpeed =  BACKWARD_LEFT_SLOW
+  RightSpeed =  FORWARD_RIGHT_SLOW
+  GOSUB SetMotorSpeed
+  ScootDistance = 29 'was 14
+  GOSUB Scoot2
+  GOSUB FullStop
+  RETURN
+
+TurnRight90:
+  LeftSpeed =  BACKWARD_RIGHT_SLOW
+  RightSpeed =  FORWARD_LEFT_SLOW
+  GOSUB SetMotorSpeed
+  ScootDistance = 29 'was 14
+  GOSUB Scoot2
+  GOSUB FullStop
+  RETURN
+
+Turn180:
+  LeftSpeed =  BACKWARD_RIGHT_SLOW
+  RightSpeed =  FORWARD_LEFT_SLOW
+  GOSUB SetMotorSpeed
+  ScootDistance = 60 'was 28 then 56
+  GOSUB Scoot2
+  GOSUB FullStop
+  RETURN
+
+ TurnRight45:
+  LeftSpeed =  BACKWARD_RIGHT_FAST
+  RightSpeed =  FORWARD_LEFT_FAST
+  GOSUB SetMotorSpeed
+  ScootDistance = 18 'was 7 then 14
+  GOSUB Scoot2
+  GOSUB FullStop
+  RETURN
+
+  TurnLeft45:
+  LeftSpeed = BACKWARD_LEFT_FAST
+  RightSpeed = FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+  ScootDistance = 14 'was 7
+  GOSUB Scoot2
+  GOSUB FullStop
+  RETURN
+
+TurnRight:
+  LeftSpeed =  BACKWARD_RIGHT_SLOW
+  RightSpeed =  FORWARD_LEFT_SLOW
+  GOSUB SetMotorSpeed
+  ScootDistance = 7
+  GOSUB Scoot2
+  GOSUB FullStop
+  RETURN
+'--------------------------------------------------------------------------
+EndOfCommonCode:
+'==========================================================================
+' END OF CODE HEADER
+'==========================================================================
+'Program main loop. Done repeatedly.
+Start:
+GET 0,Room
+GET 1,Corner
+IF Corner = 1 THEN
+  GOSUB PanLeft
+ELSEIF Corner = 2 THEN
+  GOSUB PanFront
+ELSE
+  GOSUB PanRight
+ENDIF
+PAUSE 2000
+
+IF Room = 1 THEN
+  GOTO Room1
+ELSE
+  GOTO Room2
+ENDIF
+
+
+Room1:
+IF Corner = 1 THEN
+GOTO Corner11
+ELSEIF Corner = 2 THEN
+  GOSUB AlignLeftWall
+  PAUSE 500
+  'GOSUB TurnRight90 'was TurnRight45
+  GOSUB TurnRight45 'was TurnRight45   11/13/12   then TurnRight 2/5/13
+  ScootDistance = 160 'was 80 4/24/12
+  GOSUB ScootBackwards              '<------- This is where teh fault is occuring 11/1/12
+  GOSUB FullStop
+  PAUSE 1000 '****               'The entire board resets itself and be started fromt the beginning with the start button
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  GOSUB TurnLeft90
+GOTO Corner11
+ELSEIF Corner = 3 THEN
+  GOSUB AlignRightWall
+  PAUSE 500
+  ScootDistance = 140 'was 70 4/24/12
+  GOSUB ScootBackwards
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  GOSUB TurnLeft90
+  GOTO Corner11
+  'GOSUB FixUpCorner3
+  'GOSUB FullStop
+  'STOP
+ENDIF
+STOP
+
+Room2:
+IF Corner = 1 THEN
+  GOTO Corner21
+ELSEIF Corner = 2 THEN
+  GOSUB TurnRight90   'Was TurnRight45
+  GOSUB AlignLeftWall
+  ScootDistance = 160 'was 80 4/24/12
+  GOSUB ScootBackwards
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  GOSUB TurnLeft90
+GOTO Corner21
+ELSEIF Corner = 3 THEN
+  GOSUB AlignRightWall
+  PAUSE 500
+  ScootDistance = 140  'was 70 4/24/12
+  GOSUB ScootBackwards
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  GOSUB TurnLeft90
+GOTO Corner21
+ENDIF
+'corner23
+STOP
+
+
+Corner11:
+'GOSUB FullStop
+'STOP
+GOSUB AlignLeftWall
+PAUSE 500
+GOSUB Turn180
+'STOP
+PAUSE 500
+GOSUB AlignRightWall
+PAUSE 1000
+GOSUB AlignRightWall
+PAUSE 500
+
+Corner11a:
+GOSUB FollowRightWall
+IF Done = 1 THEN GOTO Corner11b
+GOTO Corner11a
+
+Corner11b:
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+
+'wait until robots butt is into intersection
+Corner11c:
+  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  GOSUB ReadDistanceSensors
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Corner11d
+  GOTO Corner11c
+
+Corner11d:
+GOSUB FullStop
+'STOP
+ScootDistance = 10 'was 12 4/24/12, then 24 11-8-12 **then 10**
+GOSUB Scoot
+PAUSE 1000
+GOSUB TurnRight90
+GOSUB FullStop
+PAUSE 500
+GOSUB AlignLeftWall
+PAUSE 1000
+
+Corner11e:
+GOSUB FollowLeftWall
+  IF Done = 1 THEN GOTO Corner11f
+  GOTO Corner11e
+
+Corner11f:
+  'GOSUB FullStop
+  'STOP
+  ScootDistance = 30 'was 15 4/24/12   <--- Added 3/28/13
+  GOSUB Scoot                         '<--- Added 3/28/13
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+
+'wait until robots butt is into intersection
+Corner11g:
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'threshold = 240, i.e. 24 inches
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD3 THEN GOTO Corner11h
+  GOTO Corner11g             '^created on 2/6/13 distance = 12 inches
+
+'wait until the robot's butt is out of intersection
+Corner11h:
+  'GOSUB FullStop
+  'STOP
+  '*DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  '*GOSUB ReadDistanceSensors
+  '*Distance2 = Distance
+  'IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Corner11h2  <--removed 2/5/13
+  'GOTO Corner11h
+  '*IF Distance > 60 THEN GOTO Corner11h
+'Corner11h2:                                                  <--   removed 2/5/13
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'threshold2 = 100, i.e. 10 inches
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Corner11i  'was threshold3 3/28/13
+  GOTO Corner11h
+  'GOTO Corner11h2                                     <---    removed 2/5/13
+  'GOTO Corner11i
+
+Corner11i:
+  GOSUB FullStop
+  ScootDistance = 30 'was 15 4/24/12 then 30 1/31/13 then 10
+  GOSUB Scoot
+  GOSUB FullStop
+  'GOSUB TurnRight45 '*
+  'STOP
+
+Corner11j:
+  'GOSUB FollowLeftWall
+  GOSUB FollowRightWall
+  IF Done = 1 THEN GOTO Corner11K
+  GOTO Corner11j
+
+Corner11K:
+  GOSUB NitrousEngage
+  'LeftSpeed =  FORWARD_LEFT_FAST
+  'RightSpeed =  FORWARD_RIGHT_FAST
+  'GOSUB SetMotorSpeed
+
+Corner11L:
+  GOSUB CheckWhiteLine
+  IF WhiteLine > 0 THEN GOTO Corner11M
+  GOTO Corner11L
+
+Corner11M:
+  GOSUB FullStop 'Stop Placed HERE for Testing purposes 4/24/12-5/8/12
+  STOP
+
+Corner21:
+'GOSUB FullStop
+'STOP
+'GOSUB Turn180 *
+'GOSUB FullStop *
+'STOP
+'PAUSE 500       *
+GOSUB AlignLeftWall
+PAUSE 1000
+'GOSUB AlignLeftWall
+'PAUSE 1000
+'GOSUB AlignLeftWall
+'PAUSE 1000
+
+Corner21a:
+'GOSUB FollowRightWall
+'IF Done = 1 THEN GOTO Corner21b
+'GOTO Corner21a
+ScootDistance = 150 'was 100 4/24/12 then 200 11/20/12
+GOSUB ScootBackwards
+
+Corner21b:
+  'LeftSpeed =  FORWARD_LEFT_FAST
+  'RightSpeed =  FORWARD_RIGHT_FAST
+  'GOSUB SetMotorSpeed
+
+'wait until robots butt is into intersection
+Corner21c:
+  'DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  'GOSUB ReadDistanceSensors
+  'IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN GOTO Corner21d
+  'GOTO Corner21c
+
+Corner21d:
+ScootDistance = 24 'was 12 4/24/12
+GOSUB Scoot
+PAUSE 1000
+GOSUB TurnRight90
+GOSUB FullStop
+PAUSE 500
+GOSUB AlignRightWall
+PAUSE 1000
+
+Corner21e:
+GOSUB FollowRightWall
+  IF Done = 1 THEN GOTO Corner21f
+  GOTO Corner21e
+
+Corner21f:
+  'GOSUB FullStop
+  'STOP
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  GOSUB FullStop
+  PAUSE 500
+
+Corner21f2:
+  GOSUB FollowLeftWall
+  IF Done = 1 THEN GOTO Corner21f3
+  GOTO Corner21f2
+
+Corner21f3:
+  'GOSUB FullStop
+  'STOP
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+
+'wait until robots butt is into intersection
+Corner21g:
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'threshold = 240, i.e. 24 inches
+  IF Distance > INTERSECTION_DISTANCE_THRESHOLD3 THEN GOTO Corner21h
+  GOTO Corner21g       '^created on 2/6/13 distance = 12 inches
+
+'wait until the robot's butt is out of intersection
+Corner21h:
+  'GOSUB FullStop
+  'STOP
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  'Distance2 = Distance
+  'DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  'GOSUB ReadDistanceSensors
+  'threshold2 = 100, i.e. 10 inches
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Corner21i
+  GOTO Corner21h
+
+Corner21i:
+  ScootDistance = 30 'was 15 4/24/12
+  GOSUB Scoot
+  GOSUB FullStop
+
+Corner21i2:
+  GOSUB FollowRightWall
+  IF Done = 1 THEN GOTO Corner21j
+  GOTO Corner21i2
+
+Corner21j:
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
+
+Corner21k:
+  GOSUB CheckWhiteLine
+  IF WhiteLine > 0 THEN GOTO Corner21L
+  GOTO Corner21k
+
+Corner21L:
+  GOSUB FullStop
+  STOP
+
+'Corner13:
+'STOP
+
+'Corner21:
+'STOP
+
+'Corner22:
+'STOP
+
+
+
+
+'Corner32:
+'STOP
+
+'----------------------------------------------------------------------------------------------

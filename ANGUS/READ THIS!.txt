@@ -1,0 +1,51 @@
+ANGUS' FAN ROTATES FORWARD BUT THE UV SHIELD MUST BE MOVED IN SOME WAY 
+AS THE FAN CANNOT PUT OUT THE CANDLE AT A DISTANCE OF 3 inches or greater 4/12/12
+
+May 10, 2012
+To test the accuracy of ANGUS' odometry sensor I have set up a debug statement that shows the ScootDistance being counted down in the Scoot subroutine. 
+
+Scoot:
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+Scoot1:
+  GOSUB SetMotorSpeed
+Scoot2:
+  GOSUB CheckOdometry
+  DO UNTIL ScootDistance = 0
+  DEBUG DEC ScootDistance,CR   <----DEBUG STATEMENT!
+    Temp = WhiteLine
+    GOSUB CheckOdometry
+    IF Temp <> WhiteLine THEN ScootDistance = ScootDistance -1
+  LOOP
+  GOSUB FullStop
+  RETURN
+
+When ANGUS is running under the following test program, the debug terminal will count down from 80 to 0 at the FAST motor speed.
+
+  ScootDistance = 80
+  GOSUB Scoot
+  STOP
+
+However if ANGUS is running with the SLOW motor speed the debug terminal will count down from 70 to 0 even though the ScootDistance is defined as 80.
+
+  Leftspeed = FORWARD_LEFT_SLOW
+  Rightspeed = FORWARD_RIGHT_SLOW
+  ScootDistance = 80
+  GOSUB Scoot1
+  STOP
+
+What could be the problem? Is there something wrong with my coding?
+
+5/18/12
+Mr.Pinette has an presented me with a test for the odeometery inacurracy. 
+	1. Get a very long piece of paper (about 2-3 ft)
+	2. Test Angus with odometry at both FAST and SLOW speeds. 
+	3. Measure the distance of travel after each test
+	4. If the distances are siginificantly different then we have a hidden coding error. 
+About 20 tests for each speed. 
+
+MAY 30, 2012
+Angus' fan has stopped working. It will power on in the test program but only for a split second then it repeats. 
+TESTS:
+1.Disconnect the fan completely and see if Angus'operation improves. 
+2. Check voltage in PIN15 screw terminals to see if how much power (if any) is going to the fan and resistor in the test program. 

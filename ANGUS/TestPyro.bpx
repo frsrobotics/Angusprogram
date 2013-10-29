@@ -1,0 +1,54 @@
+' {$STAMP BS2px}
+' {$PBASIC 2.5}
+
+
+SDA     CON 0           ' SDA on pin13, SCL on pin14
+Ver     VAR Byte
+Ambient VAR Byte
+Pix1    VAR Byte
+Pix2    VAR Byte
+Pix3    VAR Byte
+Pix4    VAR Byte
+Pix5    VAR Byte
+Pix6    VAR Byte
+Pix7    VAR Byte
+Pix8    VAR Byte
+
+'Communication string variables
+  Cmmd VAR Byte    'Holds command code to motor controller
+  Addr VAR Byte    'Holds register address in motor controller
+  Leng VAR Byte    'Holds the length of the data to be transmitted
+  Cksum VAR Byte   'Holds the checksum for the communication string to the motor controller
+  Data1 VAR Byte   'Holds the data input from the motor controller
+
+  'Motor speed
+  LeftSpeed VAR Word  'Speed of left motor
+  RightSpeed VAR Word 'Speed of right motor
+
+  'Motor controller constants
+  BAUD CON 86    'Serial transmission speed to motor controller
+  TM CON 7       'Pin number of receiving data from motor controller
+  FM CON 8       'Pin number for transmitting data to the motor controller
+
+  I_O_DIR  CON %1001000100000001   'I/O pin directions
+  I_O_PULL CON %0000111001000000   'Pullup (PU) resistor configurations
+  I_O_INIT CON %0000000100000001   'Initial output settings
+
+  'Speed control constants
+  MOTOR_ADJUST CON 36
+  FORWARD_LEFT_FAST CON 970
+  FORWARD_RIGHT_FAST CON -970
+  BACKWARD_LEFT_FAST CON -970
+  BACKWARD_RIGHT_FAST CON 970
+
+'Set up the I/O lines
+  DIRS = I_O_DIR
+  OUTS = I_O_INIT
+  CONFIGPIN PULLUP,I_O_PULL
+
+
+Start:
+  I2CIN SDA, $d1, 0, [Ver, Ambient, Pix1, Pix2, Pix3, Pix4, Pix5, Pix6, Pix7, Pix8 ]
+  DEBUG CLS, DEC3 Ambient, " ", DEC3 Pix1, " ", DEC3 Pix2," ", DEC3 Pix3," ", DEC3 Pix4," ", DEC3 Pix5," ", DEC3 Pix6," ", DEC3 Pix7," ", DEC3 Pix8
+  PAUSE 100
+  GOTO Start
