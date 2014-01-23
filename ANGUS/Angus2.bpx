@@ -549,7 +549,7 @@ RainDance2:
   'GOSUB StepRight
   'GOSUB StepRight
   'GOSUB StepLeft
-  PAUSE 10000
+  PAUSE 12000
   'GOSUB StepLeft
   GOSUB TurnOffFan
   'Stop

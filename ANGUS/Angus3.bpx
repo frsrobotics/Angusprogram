@@ -63,7 +63,7 @@
   DISTANCE_SENSOR_BACK_LEFT CON 5   'Front distance sensor input pin
   DISTANCE_SENSOR_BACK_RIGHT CON 3  'Front distance sensor input pin
   DISTANCE_TOO_FAR CON 70 'was 100 6/18/12 'Max distance from wall
-  DISTANCE_TOO_NEAR CON 30 'was 60  'Min distance from wall
+  DISTANCE_TOO_NEAR CON 35 'was 60  'Min distance from wall
 
   PANHEAD CON 6 'was 14             'Pan head servo pin
   PAN_LEFT CON 800 'was 2900        'Pulse width to pan full left
@@ -138,6 +138,8 @@
   INTERSECTION_DISTANCE_THRESHOLD CON 240
   INTERSECTION_DISTANCE_THRESHOLD2 CON 80
   INTERSECTION_DISTANCE_THRESHOLD3 CON 110 'was 120 3/5/13 then 130
+  INTERSECTION_DISTANCE_THRESHOLD4 CON 40
+  INTERSECTION_DISTANCE_THRESHOLD5 CON 60
   RIGHT_FRONT_DISTANCE_TOO_CLOSE CON 95
   RIGHT_FRONT_DISTANCE_TOO_FAR CON 45
   FRONT_LEFT_FIX CON 0
@@ -166,12 +168,50 @@
 ' Follows right wall until front sensor clears the wall. Returns done = 1
 ' when this happens, 0 otherwise
 
-FollowRightWall:
+'FollowRightWallOld:
+  'DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  'GOSUB ReadDistanceSensors
+  'IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
+    'Done = 1
+    'RETURN
+  'ELSE
+    'Done = 0
+  'ENDIF
+  'Difference = Distance
+  'DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  'GOSUB ReadDistanceSensors
+  'DEBUG DEC Difference, " ",DEC Distance,CR
+  'IF ((Difference+Distance)/2)>DISTANCE_TOO_FAR THEN
+    'Angle = -CORRECTION_ANGLE
+  'ELSEIF ((Difference+Distance)/2)<DISTANCE_TOO_NEAR THEN
+    'Angle = CORRECTION_ANGLE
+  'ELSE
+    'Angle = 0
+  'ENDIF
+  'IF Difference = (Distance+Angle) THEN
+    'LeftSpeed =  FORWARD_LEFT_FAST
+    'RightSpeed =  FORWARD_RIGHT_FAST
+    'GOSUB SetMotorSpeed
+  'ELSEIF Difference < (Distance+Angle) THEN
+  'DEBUG "less than zero"
+    'LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
+    'RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
+    'GOSUB SetMotorSpeed
+  'ELSE
+  'DEBUG "greater than zero"
+    'LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
+    'RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
+    'GOSUB SetMotorSpeed
+  'ENDIF
+  'RETURN
+
+  FollowRightWall:
   DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
   GOSUB ReadDistanceSensors
+  DEBUG DEC distance ,CR
   IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
     Done = 1
-    RETURN
+    RETURN    '0 <--- Removed this 11/27/12
   ELSE
     Done = 0
   ENDIF
@@ -180,23 +220,27 @@ FollowRightWall:
   GOSUB ReadDistanceSensors
   'DEBUG DEC Difference, " ",DEC Distance,CR
   IF ((Difference+Distance)/2)>DISTANCE_TOO_FAR THEN
-    Angle = -CORRECTION_ANGLE
+  'DEBUG "too far "
+    Distance = Distance-CORRECTION_ANGLE
   ELSEIF ((Difference+Distance)/2)<DISTANCE_TOO_NEAR THEN
-    Angle = CORRECTION_ANGLE
+  'DEBUG "too near "
+    Distance = Distance+CORRECTION_ANGLE
   ELSE
+    'DEBUG "just right "
     Angle = 0
   ENDIF
-  IF Difference = (Distance+Angle) THEN
+  IF Difference = (Distance) THEN
+  'DEBUG "Straight",CR
     LeftSpeed =  FORWARD_LEFT_FAST
     RightSpeed =  FORWARD_RIGHT_FAST
     GOSUB SetMotorSpeed
-  ELSEIF Difference < (Distance+Angle) THEN
-  'DEBUG "less than zero"
+  ELSEIF Difference < (Distance) THEN
+  'DEBUG "turn left",DEC Distance," ",DEC Distance," ", DEC Angle,CR
     LeftSpeed = FORWARD_LEFT_FAST+BACKWARD_LEFT_TURN
     RightSpeed = FORWARD_RIGHT_FAST+FORWARD_RIGHT_TURN
     GOSUB SetMotorSpeed
   ELSE
-  'DEBUG "greater than zero"
+  'DEBUG "turn right",CR
     LeftSpeed = FORWARD_LEFT_FAST+FORWARD_LEFT_TURN
     RightSpeed = FORWARD_RIGHT_FAST+BACKWARD_RIGHT_TURN
     GOSUB SetMotorSpeed
@@ -638,8 +682,8 @@ ELSEIF Corner = 2 THEN
   GOSUB TurnLeft90
 GOTO Corner11
 ELSEIF Corner = 3 THEN
-  GOSUB AlignRightWall
-  PAUSE 500
+  'GOSUB AlignRightWall        /_____ removed 12-3-13, was causing an error
+  'PAUSE 500                   \
   ScootDistance = 140 'was 70 4/24/12
   GOSUB ScootBackwards
   ScootDistance = 30 'was 15 4/24/12
@@ -656,11 +700,11 @@ Room2:
 IF Corner = 1 THEN
   GOTO Corner21
 ELSEIF Corner = 2 THEN
-  GOSUB TurnRight90   'Was TurnRight45
+  GOSUB TurnRight45   'Was TurnRight45 then TurnRight90
   GOSUB AlignLeftWall
   ScootDistance = 160 'was 80 4/24/12
   GOSUB ScootBackwards
-  ScootDistance = 30 'was 15 4/24/12
+  ScootDistance = 20 'was 15 4/24/12 was 30 changed 1-7-14
   GOSUB Scoot
   GOSUB TurnLeft90
 GOTO Corner21
@@ -715,7 +759,7 @@ ScootDistance = 10 'was 12 4/24/12, then 24 11-8-12 **then 10**
 GOSUB Scoot
 PAUSE 1000
 GOSUB TurnRight90
-GOSUB FullStop
+'GOSUB FullStop
 PAUSE 500
 GOSUB AlignLeftWall
 PAUSE 1000
@@ -728,14 +772,16 @@ GOSUB FollowLeftWall
 Corner11f:
   'GOSUB FullStop
   'STOP
-  ScootDistance = 30 'was 15 4/24/12   <--- Added 3/28/13
-  GOSUB Scoot                         '<--- Added 3/28/13
+  'ScootDistance = 30 'was 15 4/24/12   <--- Added 3/28/13
+  'GOSUB Scoot                         '<--- Added 3/28/13
   LeftSpeed =  FORWARD_LEFT_FAST
   RightSpeed =  FORWARD_RIGHT_FAST
   GOSUB SetMotorSpeed
 
 'wait until robots butt is into intersection
 Corner11g:
+  'GOSUB FullStop
+  'STOP
   DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
   GOSUB ReadDistanceSensors
   'threshold = 240, i.e. 24 inches
@@ -752,34 +798,49 @@ Corner11h:
   'IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Corner11h2  <--removed 2/5/13
   'GOTO Corner11h
   '*IF Distance > 60 THEN GOTO Corner11h
-'Corner11h2:                                                  <--   removed 2/5/13
+'Corner11h2:                                                  '<--   removed 2/5/13
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  'threshold2 = 10, i.e. 10 inches
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD5 THEN GOTO Corner11h2  'was threshold3 3/28/13
+  'GOSUB FullStop
+  'stop
+  GOTO Corner11h
+Corner11h2:
   DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
   GOSUB ReadDistanceSensors
-  'threshold2 = 100, i.e. 10 inches
-  IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Corner11i  'was threshold3 3/28/13
+  'threshold2 = 10, i.e. 10 inches
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD5 THEN GOTO Corner11h2  'was threshold3 3/28/13
+  'GOSUB FullStop
+  'stop
   GOTO Corner11h
   'GOTO Corner11h2                                     <---    removed 2/5/13
   'GOTO Corner11i
 
 Corner11i:
-  GOSUB FullStop
-  ScootDistance = 30 'was 15 4/24/12 then 30 1/31/13 then 10
-  GOSUB Scoot
-  GOSUB FullStop
+  'GOSUB FullStop                                                   <
+  'ScootDistance = 30 'was 15 4/24/12 then 30 1/31/13 then 10       < removed 1/8/14
+  'GOSUB Scoot                                                      <
+  'GOSUB FullStop                                                   <
   'GOSUB TurnRight45 '*
-  'STOP
+  PAUSE 1000               '<
+  GOSUB AlignLeftWall     '< added 1/8/14
+  PAUSE 500
+  'DEBUG "stopping" ,CR               '<
+  GOSUB FullStop '*
+  STOP           '*
 
 Corner11j:
-  'GOSUB FollowLeftWall
-  GOSUB FollowRightWall
+  GOSUB FollowLeftWall
+  'GOSUB FollowRightWall
   IF Done = 1 THEN GOTO Corner11K
   GOTO Corner11j
 
 Corner11K:
-  GOSUB NitrousEngage
-  'LeftSpeed =  FORWARD_LEFT_FAST
-  'RightSpeed =  FORWARD_RIGHT_FAST
-  'GOSUB SetMotorSpeed
+  'GOSUB NitrousEngage
+  LeftSpeed =  FORWARD_LEFT_FAST
+  RightSpeed =  FORWARD_RIGHT_FAST
+  GOSUB SetMotorSpeed
 
 Corner11L:
   GOSUB CheckWhiteLine
@@ -787,7 +848,7 @@ Corner11L:
   GOTO Corner11L
 
 Corner11M:
-  GOSUB FullStop 'Stop Placed HERE for Testing purposes 4/24/12-5/8/12
+  GOSUB FullStop 'Stop Placed HERE for Testing0 purposes 4/24/12-5/8/12
   STOP
 
 Corner21:
@@ -808,7 +869,7 @@ Corner21a:
 'GOSUB FollowRightWall
 'IF Done = 1 THEN GOTO Corner21b
 'GOTO Corner21a
-ScootDistance = 150 'was 100 4/24/12 then 200 11/20/12
+ScootDistance = 175 'was 100 4/24/12 then 200 11/20/12 then 150
 GOSUB ScootBackwards
 
 Corner21b:

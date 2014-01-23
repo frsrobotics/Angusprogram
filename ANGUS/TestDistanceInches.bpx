@@ -138,9 +138,10 @@ IsLow CON 0
 
 Main:
   DO                                                'List Of Good/Bad Sonar connections
+  '
   'DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT        'Back Right Sensor Wire - Bad
-  'DistanceSensor = DISTANCE_SENSOR_BACK_LEFT         'Back Left Sensor Wire - Good
-  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT       'Front Left Sensor Wire - Good
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT         'Back Left Sensor Wire - Good
+  'DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT       'Front Left Sensor Wire - Good
   'DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT        'Front Right Sensor Wire - Good
   GOSUB ReadDistanceSensors
   DEBUG DEC Distance,CR

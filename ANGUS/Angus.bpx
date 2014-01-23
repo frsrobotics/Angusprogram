@@ -1,4 +1,4 @@
-'{$STAMP BS2PX,Angus2,Angus3,Angus4}
+'{$STAMP BS2PX,Angus2,Angus3,Angus4,Angus5}
 ' {$PBASIC 2.5}
 '==========================================================================
 ' BEGINNING OF CODE HEADER
@@ -63,14 +63,15 @@
   DISTANCE_SENSOR_BACK_LEFT CON 5   'Front distance sensor input pin
   DISTANCE_SENSOR_BACK_RIGHT CON 3  'Front distance sensor input pin
   DISTANCE_TOO_FAR CON 70'was 100 then 80 then 70 then 80 'Max distance from wall
+
   DISTANCE_TOO_NEAR CON 30'was 60 then 30 then 40  'Min distance from wall
 
   'PANHEAD CON 6 'was 14             'Pan head servo pin
-  'PAN_LEFT CON 700 'was 2900        'Pulse width to pan full left
-  'PAN_RIGHT CON 3000 'was 800       'Pulse width to pan full right
-  'PAN_FRONT CON 1800 'was 1760      'Pulse width to pan straight ahead
-  'PAN_LEFT_45 CON 1275 'was 2345    'Pulse width to pan 45 degrees left
-  'PAN_RIGHT_45 CON 2345 'was 1275   'Pulse width to pan 45 degrees right
+  PAN_LEFT CON 700 'was 2900        'Pulse width to pan full left
+  PAN_RIGHT CON 3000 'was 800       'Pulse width to pan full right
+  PAN_FRONT CON 1800 'was 1760      'Pulse width to pan straight ahead
+  PAN_LEFT_45 CON 1275 'was 2345    'Pulse width to pan 45 degrees left
+  PAN_RIGHT_45 CON 2345 'was 1275   'Pulse width to pan 45 degrees right
 
   PUMP CON 13  'Pump control pin
 
@@ -101,60 +102,60 @@
   'BACKWARD_LEFT_FAST CON -500
   'BACKWARD_RIGHT_FAST CON 500
 
-  'FORWARD_LEFT_500 CON 1000
-  'FORWARD_RIGHT_500 CON -1000-15 'was 5  10/25/12 was 20
-  'BACKWARD_LEFT_500 CON -1000
-  'BACKWARD_RIGHT_500 CON 1000
+  FORWARD_LEFT_500 CON 1000
+  FORWARD_RIGHT_500 CON -1000-15 'was 5  10/25/12 was 20
+  BACKWARD_LEFT_500 CON -1000
+  BACKWARD_RIGHT_500 CON 1000
 
   FORWARD_LEFT_550 CON 650
   FORWARD_RIGHT_550 CON -650-32 'was 15  '<---- using these amounts (originally 550) 1/31/13
   BACKWARD_LEFT_550 CON -650
   BACKWARD_RIGHT_550 CON 650
 
-  'FORWARD_LEFT_600 CON 600+10
-  'FORWARD_RIGHT_600 CON -600-10
-  'BACKWARD_LEFT_600 CON -600+10
-  'BACKWARD_RIGHT_600 CON 600-10
+  FORWARD_LEFT_600 CON 600+10
+  FORWARD_RIGHT_600 CON -600-10
+  BACKWARD_LEFT_600 CON -600+10
+  BACKWARD_RIGHT_600 CON 600-10
 
-  'FORWARD_LEFT_650 CON 650
-  'FORWARD_RIGHT_650 CON -650
-  'BACKWARD_LEFT_650 CON -650
-  'BACKWARD_RIGHT_650 CON 650
+  FORWARD_LEFT_650 CON 650
+  FORWARD_RIGHT_650 CON -650
+  BACKWARD_LEFT_650 CON -650
+  BACKWARD_RIGHT_650 CON 650
 
-  'FORWARD_LEFT_700 CON 700
-  'ORWARD_RIGHT_700 CON -700
-  'BACKWARD_LEFT_700 CON -700
-  'BACKWARD_RIGHT_700 CON 700
+  FORWARD_LEFT_700 CON 700
+  FORWARD_RIGHT_700 CON -700
+  BACKWARD_LEFT_700 CON -700
+  BACKWARD_RIGHT_700 CON 700
 
-  'FORWARD_LEFT_750 CON 750
-  'ORWARD_RIGHT_750 CON -750
-  'BACKWARD_LEFT_750 CON -750
-  'BACKWARD_RIGHT_750 CON 750
+  FORWARD_LEFT_750 CON 750
+  FORWARD_RIGHT_750 CON -750
+  BACKWARD_LEFT_750 CON -750
+  BACKWARD_RIGHT_750 CON 750
 
-  'FORWARD_LEFT_800 CON 800
-  'FORWARD_RIGHT_800 CON -800
-  'BACKWARD_LEFT_800 CON -800
-  'BACKWARD_RIGHT_800 CON 800
+  FORWARD_LEFT_800 CON 800
+  FORWARD_RIGHT_800 CON -800
+  BACKWARD_LEFT_800 CON -800
+  BACKWARD_RIGHT_800 CON 800
 
-  'FORWARD_LEFT_850 CON 850
-  'FORWARD_RIGHT_850 CON -850
-  'BACKWARD_LEFT_850 CON -850
-  'BACKWARD_RIGHT_850 CON 850
+  FORWARD_LEFT_850 CON 850
+  FORWARD_RIGHT_850 CON -850
+  BACKWARD_LEFT_850 CON -850
+  BACKWARD_RIGHT_850 CON 850
 
-  'FORWARD_LEFT_900 CON 900
-  'FORWARD_RIGHT_900 CON -900
-  'BACKWARD_LEFT_900 CON -900
-  'BACKWARD_RIGHT_900 CON 900
+  FORWARD_LEFT_900 CON 900
+  FORWARD_RIGHT_900 CON -900
+  BACKWARD_LEFT_900 CON -900
+  BACKWARD_RIGHT_900 CON 900
 
-  'FORWARD_LEFT_950 CON 950
-  'FORWARD_RIGHT_950 CON -950
-  'BACKWARD_LEFT_950 CON -950
-  'BACKWARD_RIGHT_950 CON 950
+  FORWARD_LEFT_950 CON 950
+  FORWARD_RIGHT_950 CON -950
+  BACKWARD_LEFT_950 CON -950
+  BACKWARD_RIGHT_950 CON 950
 
-  'FORWARD_LEFT_1000 CON 1000
-  'FORWARD_RIGHT_1000 CON -1000
-  'BACKWARD_LEFT_1000 CON -1000
-  'BACKWARD_RIGHT_1000 CON 1000
+  FORWARD_LEFT_1000 CON 1000
+  FORWARD_RIGHT_1000 CON -1000
+  BACKWARD_LEFT_1000 CON -1000
+  BACKWARD_RIGHT_1000 CON 1000
 
   FORWARD_LEFT_TURN CON 50
   FORWARD_RIGHT_TURN CON -50
@@ -171,29 +172,29 @@
   BACKWARD_LEFT_WALL CON -800
   BACKWARD_RIGHT_WALL CON 800
 
-  'RIGHT_GAIN CON 10
-  'RIGHT_ADJUST CON -40
-  RIGHT_BACK_DISTANCE_THRESHOLD CON 80'<======might use this code piece...was 14
-  'RIGHT_FRONT_DISTANCE_THRESHOLD CON 8
+  RIGHT_GAIN CON 10
+  RIGHT_ADJUST CON -40
+  RIGHT_BACK_DISTANCE_THRESHOLD CON 14
+  RIGHT_FRONT_DISTANCE_THRESHOLD CON 8
   INTERSECTION_DISTANCE_THRESHOLD CON 240
   INTERSECTION_DISTANCE_THRESHOLD2 CON 130 'was 120 now 80 then 100 then 80 2/28/13
   INTERSECTION_DISTANCE_THRESHOLD3 CON 120
   INTERSECTION_DISTANCE_THRESHOLD4 CON 300
-  'RIGHT_FRONT_DISTANCE_TOO_CLOSE CON 95
-  'RIGHT_FRONT_DISTANCE_TOO_FAR CON 45
-  'FRONT_LEFT_FIX CON 0
-  'BACK_RIGHT_FIX CON 18
-  'FRONT_RIGHT_FIX CON 0
-  'BACK_LEFT_FIX CON 0
-  'LEFT CON 2
-  'RIGHT CON 1
-  'STRAIGHT CON 0
+  RIGHT_FRONT_DISTANCE_TOO_CLOSE CON 95
+  RIGHT_FRONT_DISTANCE_TOO_FAR CON 45
+  FRONT_LEFT_FIX CON 0
+  BACK_RIGHT_FIX CON 18
+  FRONT_RIGHT_FIX CON 0
+  BACK_LEFT_FIX CON 0
+  LEFT CON 2
+  RIGHT CON 1
+  STRAIGHT CON 0
 
   'Timing constants
   STOP_TIME CON 50 'Time it takes to stop the robot. NOTE: Might need to tweak this
-  'TURN90_TIME CON 325 'Time it takes to turn the robot 90 degrees.  NOTE: will need to tweak this
+  TURN90_TIME CON 325 'Time it takes to turn the robot 90 degrees.  NOTE: will need to tweak this
   CORRECTION_ANGLE CON 20
-  'ANGLE_TOO_BIG CON 600
+  ANGLE_TOO_BIG CON 600
   UV_TIME CON 3000   'was 12000 3/31/12
   PYRO_THRESHOLD CON 100
   PanAngle VAR Word
@@ -210,6 +211,7 @@
 FollowRightWall:
   DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
   GOSUB ReadDistanceSensors
+  DEBUG DEC distance ,CR
   IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN
     Done = 1
     RETURN    '0 <--- Removed this 11/27/12
@@ -252,6 +254,7 @@ FollowRightWall:
   '--------------------------------------------------------------------------
 
 AlignRightWall:
+  PAUSE 500
   DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
   GOSUB ReadDistanceSensors
   Difference = Distance
@@ -359,6 +362,7 @@ FollowLeftWall:
 '--------------------------------------------------------------------------
 
 AlignLeftWall:
+  PAUSE 500
   DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
   GOSUB ReadDistanceSensors
   Difference = Distance
@@ -433,7 +437,7 @@ SetMotorSpeed:
   IF DATA1<>$6 THEN NA_SDC1
   RETURN
   NA_SDC1:
- ' DEBUG "SETDCERROR",CR
+  'DEBUG "SETDCERROR",CR
   RETURN
 
 '--------------------------------------------------------------------------
@@ -549,11 +553,11 @@ CheckOdometry:
   RETURN
 
 '--------------------------------------------------------------------------
-GoForward:
-  LeftSpeed =  FORWARD_LEFT_FAST
-  RightSpeed =  FORWARD_RIGHT_FAST
-  GOSUB SetMotorSpeed
-  RETURN
+'GoForward:
+  'LeftSpeed =  FORWARD_LEFT_FAST
+  'RightSpeed =  FORWARD_RIGHT_FAST
+  'GOSUB SetMotorSpeed
+  'RETURN
 
 '--------------------------------------------------------------------------
 'StepBack:
@@ -643,17 +647,17 @@ EndOfCommonCode:
   CONFIGPIN PULLUP,I_O_PULL
 
   'Remove this 5 second pause for the competition
-  PAUSE 1000
+  PAUSE 2500  'testing start time up by 500 til 5000 is reached
   'GOSUB TurnOffFan
-  'WE ARE DONE WITH FIXING!!!! LAST FIX MADE: 3/12/13
+  'WE ARE DONE WITH FIXING!!!! LAST FIX MADE: 3/12/13  <==lies
 '--------------------------------------------------------------------------
 'Program main loop. Done repeatedly.
 SoundStart:
   'DEBUG DEC "sound ", HEX Sound, CR
-  IF Sound = 0 THEN
-    GOTO Start
- ENDIF
-  'DEBUG DEC "startbutton ", HEX StartButton, CR
+  'IF Sound = 0 THEN
+    'GOTO Start
+  'ENDIF
+  'DEBUG "startbutton ", HEX StartButton, CR
   IF StartButton = 0 THEN
     GOTO Start                                 'GOHOME IN FROM ROOM1 is broken INTERSECTION FIX DOES NOT WORK
   ENDIF
@@ -661,21 +665,14 @@ SoundStart:
 
 
 Start:
- DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT  'Don't forget to uncommet the code at the bottom when the EEPROM issue is resolved
+ DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
  GOSUB ReadDistanceSensors
- IF Distance > 100 THEN
- GOSUB TurnRight90
- PAUSE 1000
- ENDIF
- GOSUB AlignRightWall
- PAUSE 500
-
- 'IF (Distance > INTERSECTION_DISTANCE_THRESHOLD3) THEN
-    'GOSUB TurnRight90
-    'PAUSE 500                                    '
-    'GOSUB AlignRightWall
-  'ENDIF
-  'GOTO Hall1
+ IF (Distance > INTERSECTION_DISTANCE_THRESHOLD3) THEN
+    GOSUB TurnRight90
+    'PAUSE 500
+    GOSUB AlignRightWall
+  ENDIF
+  GOTO Hall1
   'Room=3         'February 14, 2012 Odometry Linked. Good To Go.
   'Corner=1       '                  Begin Standard Testing.
 
@@ -777,16 +774,21 @@ Start:
   'PAUSE 200
   'STOP
 'start of run`
-Hall1:
+FollowWallUntilClear:
+  'DEBUG "Start", CR
+  'GOSUB FullStop
+  'STOP
   GOSUB FollowRightWall
   'DEBUG DEC Distance,CR
   IF Done = 1 THEN GOTO Intersection1
-  GOTO Hall1
+  'GOSUB FullStop
+  'STOP
+  GOTO FollowWallUntilClear
 
 'nose of robot is at intesection
-Intersection1:
+CheckIfClear:
   'DEBUG "done",CR
-  'GOSUB FullStop
+  'GOSUB FullStop 'checkpoint 1
   'STOP
   LeftSpeed =  FORWARD_LEFT_FAST
   RightSpeed =  FORWARD_RIGHT_FAST
@@ -794,41 +796,71 @@ Intersection1:
   'GOTO Intersection2
 
 'wait until robots butt is into intersection
-Intersection2:
+CheckIfClear2:
   DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
   GOSUB ReadDistanceSensors
+  DEBUG DEC Distance , CR
   'threshold = 240, i.e. 24 inches
   IF Distance > INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Intersection3
-  GOTO Intersection2
+  GOTO CheckIfClear2
 
 'wait until the robot's butt is out of intersection
-Intersection3:
+'*Intersection3:                   *Replaced with new bit of code for a fix 11-19-13
   'GOSUB FullStop
   'STOP
-  DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
-  GOSUB ReadDistanceSensors
-  Distance2 = Distance
-  IF Distance > 60 THEN GOTO Intersection3
-  DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
-  GOSUB ReadDistanceSensors
+  'DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  'GOSUB ReadDistanceSensors
+  'Distance2 = Distance
+  'IF Distance > 70 THEN GOTO Intersection3   '11-19-13 changed from 60 to 80 to 70 in an attempt to remedy not stopping @ door 1 (fix successful?)
+  'DEBUG DEC Distance, CR
+  'DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
+  'GOSUB ReadDistanceSensors
   'threshold2 = 100, i.e. 10 inches
   'IF (Distance < INTERSECTION_DISTANCE_THRESHOLD2) AND (Distance2 < INTERSECTION_DISTANCE_THRESHOLD2)THEN GOTO Hall2
-  IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Hall2
-  GOTO Intersection3
+  'IF Distance < INTERSECTION_DISTANCE_THRESHOLD3 THEN GOTO Hall2      '11-19-13 changed to IDT3 from IDT2 to test (fix successful?)
+  'GOTO Intersection3
+
+MoveToRoom1:
+  'GOSUB FullStop 'checkpoint 2
+  'STOP
+  'DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT *TEST*
+  DistanceSensor = DISTANCE_SENSOR_FRONT_LEFT
+  GOSUB ReadDistanceSensors
+  'Distance2 = Distance
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD3 THEN GOTO MoveToRoom1a
+  GOTO MoveToRoom1
+
+MoveToRoom1a:
+  'DistanceSensor = DISTANCE_SENSOR_FRONT_RIGHT
+  'GOSUB ReadDistanceSensors
+  'Distance2 = Distance
+  'IF Distance < 60 THEN GOTO Intersection3b
+  'GOTO Intersection3a
+
+MoveToRoom1b:
+  'GOSUB FullStop
+  'STOP
+  'DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT *TEST*
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  PAUSE 20 'cheatzy doodles "Hack"
+  'Distance2 = Distance
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD3 THEN GOTO Hall2 'was 60 changed to 80 12-3-13
+  GOTO MoveToRoom13b
 
 
   'problem here: PING often "jumps the gun" on door one, thinks hes there while still in
   'intersection. Perhaps a scoot statement would be appreciated here?
 
 'scoot to see door one
-Hall2:
+ClearHall:
   GOSUB FullStop
   'STOP
-  ScootDistance = 55 '35 original then 10  Competition  50 now 60
+  ScootDistance = 25 '35 original then 10  Competition  50 now 60  11-19-13 increased to 65 from 55 12/19/2013 was 65 decreased to 20 increased to 25
   GOSUB Scoot
-Hall2b:
+ClearRoom1:
   'Looking into first door
-  PAUSE 500
+  'PAUSE 500
   'GOSUB FullStop
   'STOP
   GOSUB AlignRightWall
@@ -842,19 +874,19 @@ Hall2b:
   'PAUSE 2000
   'GOSUB PanLeft   '*
   GOSUB ReadUv   '<---PUT THIS BACK IN WHEN UV is fixed 3/23/12
-  'Uv = 0                                         FIXED! 3/27/12
+  ' Uv = 0                                         FIXED! 3/27/12
   IF Uv > 0 THEN '*
     'GOSUB TurnLeft90 '*
     GOSUB FullStop
     ScootDistance = 40
     GOSUB Scoot
-    PAUSE 500
+    'PAUSE 500
     GOSUB AlignLeftWall
     PAUSE 500
     'GOSUB FullStop
     GOSUB AlignLeftWall
     'GOSUB FullStop
-    PAUSE 1000
+    PAUSE 500
     '  DEBUG DEC Uv, CR
     'RAM 0 is Room #
     PUT 0,1
@@ -865,51 +897,53 @@ Hall2b:
 
   'read uv
   'follow right wall to second door
-Hall2bc:
+AdvanceRoom2bc:
   ScootDistance = 80   '<---Added 3/31/12
   GOSUB ScootBackwards   '<---Added 3/31/12
   PAUSE 500             '<---Added 3/31/12
   GOSUB TurnRight90
-  PAUSE 500
+  'PAUSE 500
   GOSUB AlignRightWall
   PAUSE 500
 
-Hall2c:
+AdvanceRoom2c:
   GOSUB FollowRightWall
   IF Done = 1 THEN GOTO Door1
-  GOTO Hall2c
+  GOTO AdvanceRoom2c
 
 'nose past second door
-Door1:
+AdvanceRom2:
   'GOSUB FullStop
   'STOP
   'GOSUB StopAndGo
   LeftSpeed =  FORWARD_LEFT_FAST
   RightSpeed =  FORWARD_RIGHT_FAST
   GOSUB SetMotorSpeed
-Door2:
+AdvanceRom2:
   'GOSUB StopAndGo
 'butt is past right wall
-Door2b:
+AdvanceRom2b:
   DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
   IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN GOTO Door3
   GOTO Door2b
 
 'stop and check second door
-Door3:
+ClearRoom2:
   'GOSUB FullStop
   'STOP
-  ScootDistance = 41 'was 45 originally  then 48 then 24 then 20 then 15 then 10  then 46
+  ScootDistance = 38 'was 45 originally  then 48 then 24 then 20 then 15 then 10 then 46 then 41
   GOSUB Scoot
 
 'looking into second room
 '  GOSUB FullStop
   'STOP
-  PAUSE 500
+  'PAUSE 500
   GOSUB AlignLeftWall
   PAUSE 500
   GOSUB TurnRight90
   PAUSE 500        '<---Added 3/31/12
+  GOSUB AlignLeftWall
+  PAUSE 500
   ScootDistance = 30   '<---Added 3/31/12
   GOSUB Scoot
   'GOSUB AlignLeftWall
@@ -918,6 +952,8 @@ Door3:
   GOSUB ReadUv '<---PUT THIS BACK IN WHEN UV is fixed 3/23/12
    'Uv = 0                                      FIXED! 3/27/12
    IF Uv > 0 THEN
+    PAUSE 500
+    GOSUB AlignLeftWall
     'GOSUB TurnRight90
     'GOSUB FullStop
     PAUSE 500
@@ -926,9 +962,9 @@ Door3:
     'GOSUB FullStop
     GOSUB AlignLeftWall
     PAUSE 500
-    GOSUB AlignLeftWall
+    'GOSUB AlignLeftWall
     'GOSUB FullStop
-    PAUSE 1000
+    'PAUSE 500
     'RAM 0 is Room #
     PUT 0,2
     RUN 1
@@ -939,25 +975,28 @@ Door3:
   'GOSUB TurnLeft90
   'PAUSE 500
   'GOSUB Turn180
+  ScootDistance = 10
+  GOSUB Scoot
+  PAUSE 500
   GOSUB TurnRight90
   GOSUB FullStop
   PAUSE 1000
   'STOP
   GOSUB AlignRightWall
-  PAUSE 500
-  GOSUB AlignRightWall
+  'PAUSE 500
+  'GOSUB AlignRightWall
   'GOSUB FullStop
   PAUSE 1000
   'STOP
 
 'moving down hall to intersection
-Hall3:
+AdvanceHall3:
   GOSUB FollowRightWall
   IF Done = 1 THEN GOTO Door4
   GOTO Hall3
 
 'moving past first door
-Door4:
+AdvanceHall4:
   'GOSUB FullStop
   'STOP
   LeftSpeed =  FORWARD_LEFT_FAST
@@ -965,11 +1004,11 @@ Door4:
   GOSUB SetMotorSpeed
 
 'butt of robot has cleared first door
-Door5:
+AdvanceIntersection:
    DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
   GOSUB ReadDistanceSensors
   IF Distance < INTERSECTION_DISTANCE_THRESHOLD THEN GOTO Door6
-  GOTO Door5
+  GOTO ClearIntersection
 
 'robot is moving into intersection via hall
 Door6:
@@ -984,7 +1023,7 @@ Door6:
   'GOSUB AlignLeftWall
   'GOSUB FullStop
   'STOP
-Hall4:
+FollowWallToIntersection:
   GOSUB FollowLeftWall
   IF Done = 1 THEN GOTO Hall4b
   'GOSUB FullStop
@@ -993,7 +1032,7 @@ Hall4:
 
 
 'robot is moving into intersection
-Hall4b:
+FollowWallToIntersectionb:
   'GOSUB FullStop
   'STOP
   LeftSpeed =  FORWARD_LEFT_FAST
@@ -1001,14 +1040,14 @@ Hall4b:
   GOSUB SetMotorSpeed
 
 'robot has cleared hall
-Hall4c:
+FollowWallToIntersectionc:
   DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
   GOSUB ReadDistanceSensors
   IF Distance > INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Intersection4
   GOTO Hall4c     '^should change this to THRESHOLD2^
                   ' READ THIS !!!!!!!!!!!!!!!!!! 2/16/12 Done 3/8/12
 'robot is in intersection and is turning towards next hall
-Intersection4:
+RotateLeftToDoor3:
   GOSUB FullStop
   'STOP
   ScootDistance = 12 'was 7 then 4
@@ -1025,7 +1064,7 @@ Intersection4:
  ' STOP
 
 'robot is moving into next hall
-Hall5:
+AdvanceRoom3:
   '*DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
   '*GOSUB ReadDistanceSensors
   '*IF Distance > INTERSECTION_DISTANCE_THRESHOLD THEN GOTO Hall5
@@ -1033,20 +1072,20 @@ Hall5:
   'GOSUB Scoot
   'GOSUB PanLeft
   GOSUB FullStop  'just added 2/16/12
-  PAUSE 1000     'just added 2/16/12
+  'PAUSE 500     'just added 2/16/12
   GOSUB AlignLeftWall
   PAUSE 500
   GOSUB AlignLeftWall
   'GOSUB FullStop
   PAUSE 1000 'just added 2/16/12
   'STOP
-Hall6:
+'Hall6:
   'DistanceSensor = DISTANCE_SENSOR_BACK_RIGHT
   'GOSUB ReadDistanceSensors
   'IF Distance > INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Hall6
 
 'robot bumps wall and backs up
-Hall7:
+Portal3:
   'GOSUB FullStop
   'PAUSE 1000
   'ScootDistance = 50
@@ -1061,12 +1100,14 @@ Hall7:
   'STOP
 
 'looking into third room
-Door7:
+ClearRoom3:
   ScootDistance = 15 'was 10
   GOSUB Scoot
   PAUSE 500
-  GOSUB TurnRight90
-  PAUSE 500            '<---Added 3/31/12
+  GOSUB TurnRight90        '<---Added 3/31/12
+  PAUSE 500
+  GOSUB AlignLeftWall
+  PAUSE 500
   ScootDistance = 40       '<---Added 3/31/12
   GOSUB Scoot               '<---Added 3/31/12
   'GOSUB PanRight
@@ -1074,15 +1115,17 @@ Door7:
   GOSUB ReadUv   '<---PUT THIS BACK IN WHEN UV is fixed 3/23/12
   'Uv = 0                                         FIXED! 3/27/12
   IF Uv > 0 THEN
+    GOSUB AlignLeftWall '*
+    PAUSE 500           '*
     'GOSUB TurnRight90
     ScootDistance = 60
     GOSUB Scoot
-    GOSUB AlignLeftWall
-    PAUSE 500
+    'GOSUB AlignLeftWall *
+    'PAUSE 500           *
     'GOSUB FullStop
-    GOSUB AlignLeftWall
+    'GOSUB AlignLeftWall
     'GOSUB FullStop
-    PAUSE 1000
+    'PAUSE 500
     'RAM 0 is Room #
     PUT 0,3
     'GOSUB FullStop
@@ -1090,18 +1133,19 @@ Door7:
   ENDIF
 
 'robot is turning around and is preparing to leave hall
-Hall8:
+AdvanceRoom4:
   ScootDistance = 40      '<---Added 3/31/12
   GOSUB ScootBackwards      '<---Added 3/31/12
   PAUSE 500                     '<---Added 3/31/12
-  GOSUB TurnLeft90
-  PAUSE 500
-  GOSUB Turn180
+  'GOSUB TurnLeft90
+  'PAUSE 500
+  'GOSUB Turn180
+  GOSUB TurnRight90
   'GOSUB FullStop
-  PAUSE 500
+  'PAUSE 500
   'STOP
   GOSUB AlignRightWall
-  PAUSE 500
+  'PAUSE 500
   GOSUB AlignRightWall
   PAUSE 1000
   GOSUB FullStop
@@ -1153,17 +1197,13 @@ Intersection7:
   'GOSUB ReadDistanceSensors   'added 3/15/12
   'threshold = 8 inches
   'IF (Distance < INTERSECTION_DISTANCE_THRESHOLD2) AND (Distance2 < INTERSECTION_DISTANCE_THRESHOLD2)THEN GOTO Intersection8
-  IF Distance < RIGHT_BACK_DISTANCE_THRESHOLD THEN GOTO Intersection7a 'was INTERSECTION_DISTANCE_THRESHOLD2
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD2 THEN GOTO Intersection7a
   GOTO Intersection7
 
-
 Intersection7a:
-  ScootDistance = 25 'dwas 12
-  GOSUB Scoot
-  'uses back left sensor
   DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
   GOSUB ReadDistanceSensors
-  'threshold = 12 inches     +
+  'threshold = 12 inches
   IF Distance < INTERSECTION_DISTANCE_THRESHOLD4 THEN GOTO Intersection8
   GOTO Intersection7a
 
@@ -1178,8 +1218,13 @@ Intersection8:
   'ScootDistance = 80
   'GOSUB Scoot '--------------/  These 4 pieces of code are our backup plan, Plan B.
   'GOSUB TurnLeft45 '-------/  PLAN B WORKS!!!!!!!!!! OH YEAH!!!!!!! 2/28/13
-  ScootDistance = 40
-  'GOSUB Scoot
+  'ScootDistance = 50    'Was 40 changed to 50 11-21-13
+  DistanceSensor = DISTANCE_SENSOR_BACK_LEFT
+  GOSUB ReadDistanceSensors
+  PAUSE 20
+  IF Distance < INTERSECTION_DISTANCE_THRESHOLD3 THEN GOTO Intersection8b
+  ScootDistance = 30 'was 25
+  GOSUB Scoot
  GOSUB FullStop
  'STOP
   GOSUB AlignRightWall
@@ -1202,23 +1247,14 @@ Intersection8:
     GOSUB FullStop
     GOSUB AlignLeftWall
     PAUSE 500
-    GOSUB FullStop
+    'GOSUB FullStop
     GOSUB AlignLeftWall
-    PAUSE 1000
+    PAUSE 500
     'RAM 0 is Room #
     PUT 0,4
-    RUN 1
+    RUN 1 '<=========the eepromm says this is full.  ummmmm..... ideas?
   ENDIF
   'ScootDistance = 30
-
-
-
-
-
-
-
-
-
 
 
 
